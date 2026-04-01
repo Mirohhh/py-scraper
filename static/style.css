@@ -21,6 +21,9 @@ body {
   background: #161b22;
   border-bottom: 1px solid #30363d;
   padding: 0 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .topnav a {
@@ -33,7 +36,9 @@ body {
   font-size: 0.9rem;
   font-weight: 500;
   border-bottom: 2px solid transparent;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 
 .topnav a:hover {
@@ -54,7 +59,7 @@ body {
 .container {
   max-width: 960px;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: 3rem 1.5rem;
 }
 
 h1 {
@@ -156,7 +161,9 @@ h3 {
   color: #c9d1d9;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
   font-family: inherit;
 }
 
@@ -274,7 +281,9 @@ h3 {
   padding: 0.2rem 0.35rem;
   border-radius: 4px;
   opacity: 0.6;
-  transition: opacity 0.15s, background 0.15s;
+  transition:
+    opacity 0.15s,
+    background 0.15s;
 }
 
 .cmd-remove:hover {
@@ -483,7 +492,9 @@ h3 {
   text-decoration: none;
   font-size: 0.85rem;
   font-weight: 500;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
 }
 
 .sidebar-link:hover {
@@ -504,7 +515,7 @@ h3 {
 .docs-content {
   flex: 1;
   max-width: 700px;
-  padding: 2rem 2.5rem;
+  padding: 4rem 2.5rem;
 }
 
 /* Docs content */
