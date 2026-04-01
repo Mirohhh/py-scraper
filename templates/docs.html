@@ -53,7 +53,7 @@ https://news.ycombinator.com</pre>
       <p>The scraper executes commands top-to-bottom on every URL.</p>
 
       <h3>Step 3 — Run</h3>
-      <p>Click <strong>Run Scraper</strong>. The status bar shows progress. When finished, results appear below — one card per URL. Click a result card header to expand or collapse it.</p>
+      <p>Click <strong>Run Scraper</strong>. The status bar shows progress. When finished, result cards appear below — one per URL. The first card is expanded, the rest are collapsed. Click any card header to expand or collapse it.</p>
 
       <h3>Step 4 — Export</h3>
       <ul>
@@ -62,6 +62,14 @@ https://news.ycombinator.com</pre>
         <li>Click <strong>Download All (.zip)</strong> to get every result as a zip archive.</li>
         <li>Click <strong>Download CSV</strong> to export extracted data.</li>
       </ul>
+
+      <h3>Pipeline Save / Load</h3>
+      <p>Use the <strong>Export</strong> button to save your command pipeline as a JSON file. Use <strong>Import</strong> to load a previously saved pipeline. The JSON contains an array of command objects with <code>type</code> and <code>params</code>.</p>
+      <pre class="code-block">[
+  { "type": "click", "params": { "text": "Show full rankings" } },
+  { "type": "wait_timeout", "params": { "ms": "3000" } },
+  { "type": "scroll", "params": { "times": "1" } }
+]</pre>
 
       <h3>Pipeline Example</h3>
       <p>Scrape the full FIFA rankings by clicking "Show full rankings" and waiting for the table to load:</p>
@@ -132,7 +140,7 @@ https://news.ycombinator.com</pre>
       <h1 id="api">API Reference</h1>
       <!-- ============================================================ -->
 
-      <p>All API endpoints accept and return JSON. Rate limited to <strong>30 requests per minute</strong> per IP.</p>
+      <p>All API endpoints and the web UI <code>/scrape</code> endpoint are rate-limited to <strong>30 requests per minute</strong> per IP.</p>
 
       <h3>Health Check</h3>
       <pre class="code-block">GET /api/health
@@ -228,7 +236,7 @@ Content-Disposition: attachment; filename=scraped.zip</pre>
       <pre class="code-block">POST /api/scrape { "url": "...", "commands": [{"type": "bad"}] }
 
 Response 400:
-{ "error": "commands[0].type 'bad' is invalid. Must be one of: click, scroll, wait_selector, wait_timeout" }</pre>
+{ "error": "commands[0].type 'bad' is invalid. Must be one of: click, extract, scroll, wait_selector, wait_timeout" }</pre>
       <p>Scrape failures (DNS, timeout, etc.) are per-URL — other URLs still succeed:</p>
       <pre class="code-block">{
   "results": [

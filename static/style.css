@@ -519,7 +519,7 @@ h3 {
 }
 
 /* Docs content */
-.docs h1 {
+.docs-content h1 {
   font-size: 1.5rem;
   color: #f0f6fc;
   margin: 2rem 0 0.75rem;
@@ -527,11 +527,11 @@ h3 {
   border-bottom: 1px solid #30363d;
 }
 
-.docs h1:first-of-type {
+.docs-content h1:first-of-type {
   margin-top: 0;
 }
 
-.docs h3 {
+.docs-content h3 {
   font-size: 1rem;
   text-transform: none;
   letter-spacing: normal;
@@ -539,26 +539,27 @@ h3 {
   margin: 1.75rem 0 0.5rem;
 }
 
-.docs p {
+.docs-content p {
   font-size: 0.92rem;
   line-height: 1.65;
   margin-bottom: 0.75rem;
   color: #c9d1d9;
 }
 
-.docs ul {
+.docs-content ul {
   padding-left: 1.5rem;
   margin-bottom: 0.75rem;
+  list-style-position: inside;
 }
 
-.docs li {
+.docs-content li {
   font-size: 0.92rem;
   line-height: 1.65;
   margin-bottom: 0.35rem;
   color: #c9d1d9;
 }
 
-.docs code {
+.docs-content code {
   background: #161b22;
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
@@ -566,12 +567,12 @@ h3 {
   color: #e3b341;
 }
 
-.docs a {
+.docs-content a {
   color: #58a6ff;
   text-decoration: none;
 }
 
-.docs a:hover {
+.docs-content a:hover {
   text-decoration: underline;
 }
 

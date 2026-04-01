@@ -41,7 +41,8 @@ Open [http://localhost:5000](http://localhost:5000) in your browser.
 3. Edit parameters directly in the pipeline blocks
 4. Drag blocks to reorder
 5. Click **Run Scraper**
-6. Expand/collapse result cards, copy HTML, or download results
+6. The first result card is expanded, the rest are collapsed — click headers to toggle
+7. Use **Export** / **Import** to save and load pipelines as JSON files
 
 ### Commands
 
@@ -55,7 +56,7 @@ Open [http://localhost:5000](http://localhost:5000) in your browser.
 
 ## API
 
-All `/api/*` endpoints return JSON and are rate-limited to **30 requests per minute** per IP.
+All `/api/*` endpoints and the web UI `/scrape` endpoint are rate-limited to **30 requests per minute** per IP.
 
 ### Health Check
 
