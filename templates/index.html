@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Scraper</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Web Scraper</h1>
+
+    <div class="url-section">
+      <label for="url-input">Target URL</label>
+      <input
+        type="text"
+        id="url-input"
+        placeholder="https://example.com"
+        spellcheck="false"
+      >
+    </div>
+
+    <div class="builder">
+      <div class="palette">
+        <h3>Commands</h3>
+        <div class="palette-buttons">
+          <button data-cmd="scroll" title="Scroll to bottom">
+            <span class="cmd-icon">&#8595;</span> Scroll
+          </button>
+          <button data-cmd="click" title="Click element by text">
+            <span class="cmd-icon">&#9758;</span> Click
+          </button>
+          <button data-cmd="wait_selector" title="Wait for element">
+            <span class="cmd-icon">&#9201;</span> Wait for Selector
+          </button>
+          <button data-cmd="wait_timeout" title="Wait for duration">
+            <span class="cmd-icon">&#9203;</span> Wait (ms)
+          </button>
+        </div>
+      </div>
+
+      <div class="pipeline">
+        <h3>Pipeline</h3>
+        <div id="pipeline-list" class="pipeline-list">
+          <div class="pipeline-empty">Click a command to add it here</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="run-btn" class="run-btn">Run Scraper</button>
+      <span id="status" class="status"></span>
+    </div>
+
+    <div id="results" class="results hidden">
+      <div class="results-header">
+        <h3>HTML Output</h3>
+        <div class="results-actions">
+          <button id="copy-btn" class="secondary-btn">Copy</button>
+          <button id="download-btn" class="secondary-btn">Download .html</button>
+        </div>
+      </div>
+      <pre id="html-output" class="html-output"></pre>
+    </div>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
