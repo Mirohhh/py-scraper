@@ -3,9 +3,12 @@ import io
 import re
 import time
 import zipfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import wraps
 from urllib.parse import urlparse
-from flask import Flask, render_template, request, jsonify, Response
+
+from flask import Flask, Response, jsonify, render_template, request
+
 from scraper import execute_scrape
 
 app = Flask(__name__)
@@ -70,25 +73,25 @@ def scrape():
     if not urls:
         return jsonify({"error": "At least one URL is required"}), 400
 
-    results = []
-    for url in urls:
-        url = url.strip()
+    valid_urls = []
+    for raw_url in urls:
+        url = raw_url.strip()
         if not url:
             continue
         if not url.startswith(("http://", "https://")):
             url = "https://" + url
-        try:
-            scraped = execute_scrape(url, commands)
-            results.append(
-                {
-                    "url": url,
-                    "html": scraped["html"],
-                    "extracted": scraped["extracted"],
-                    "error": None,
-                }
-            )
-        except Exception as e:
-            results.append({"url": url, "html": None, "extracted": [], "error": str(e)})
+        valid_urls.append(url)
+
+    scraped = _scrape_urls(valid_urls, commands)
+    results = [
+        {
+            "url": url,
+            "html": r["html"],
+            "extracted": r["extracted"],
+            "error": r["error"],
+        }
+        for url, r in zip(valid_urls, scraped)
+    ]
 
     return jsonify({"results": results})
 
@@ -288,18 +291,18 @@ def api_scrape():
     end = start + per_page
     page_urls = valid_urls[start:end]
 
+    scraped = _scrape_urls(page_urls, commands)
     results = []
-    for url in page_urls:
-        try:
-            scraped = execute_scrape(url, commands)
-            entry = {"url": url, "status": "ok", "html_length": len(scraped["html"])}
+    for url, r in zip(page_urls, scraped):
+        if r["error"]:
+            results.append({"url": url, "status": "error", "error": r["error"]})
+        else:
+            entry = {"url": url, "status": "ok", "html_length": len(r["html"])}
             if return_html:
-                entry["html"] = scraped["html"]
-            if scraped["extracted"]:
-                entry["extracted"] = scraped["extracted"]
+                entry["html"] = r["html"]
+            if r["extracted"]:
+                entry["extracted"] = r["extracted"]
             results.append(entry)
-        except Exception as e:
-            results.append({"url": url, "status": "error", "error": str(e)})
 
     return jsonify(
         {
@@ -369,6 +372,42 @@ def api_scrape_zip():
 
 def _api_error(status, message):
     return jsonify({"error": message}), status
+
+
+def _scrape_one(url, commands, retries=2):
+    for attempt in range(retries + 1):
+        try:
+            scraped = execute_scrape(url, commands)
+            return {
+                "html": scraped["html"],
+                "extracted": scraped["extracted"],
+                "error": None,
+            }
+        except Exception as e:
+            if attempt == retries:
+                return {"html": None, "extracted": [], "error": str(e)}
+            time.sleep(1)
+    return {"html": None, "extracted": [], "error": "Unexpected failure"}
+
+
+def _scrape_urls(urls, commands):
+    if not urls:
+        return []
+    max_workers = min(3, len(urls))
+    error_result = {"html": None, "extracted": [], "error": "No result"}
+    results = [error_result] * len(urls)
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        future_to_idx = {
+            pool.submit(_scrape_one, url, commands): i for i, url in enumerate(urls)
+        }
+        for future in as_completed(future_to_idx):
+            idx = future_to_idx[future]
+            try:
+                r = future.result()
+                results[idx] = r if r else error_result
+            except Exception as e:
+                results[idx] = {"html": None, "extracted": [], "error": str(e)}
+    return results
 
 
 def _validate_commands(commands):
