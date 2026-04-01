@@ -9,8 +9,16 @@ const COMMAND_DEFS = {
   click: {
     label: "Click",
     fields: [
-      { key: "text", placeholder: "Button/link text (e.g. Show more)", type: "text" },
+      { key: "selector", placeholder: "CSS selector (or use text)", type: "text" },
+      { key: "text", placeholder: "Button/link text", type: "text" },
       { key: "wait_after_ms", placeholder: "Wait after click ms (default 2000)", type: "number" },
+    ],
+  },
+  extract: {
+    label: "Extract",
+    fields: [
+      { key: "selector", placeholder: "CSS selector (e.g. h1, .item a)", type: "text" },
+      { key: "attr", placeholder: "Attribute: text, html, href...", type: "text" },
     ],
   },
   wait_selector: {
@@ -37,6 +45,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.getElementById("run-btn").addEventListener("click", runScraper);
   document.getElementById("download-zip-btn").addEventListener("click", downloadZip);
+  document.getElementById("download-csv-btn").addEventListener("click", downloadCsv);
+  document.getElementById("export-pipeline-btn").addEventListener("click", exportPipeline);
+  document.getElementById("import-pipeline-btn").addEventListener("click", () => {
+    document.getElementById("import-file-input").click();
+  });
+  document.getElementById("import-file-input").addEventListener("change", importPipeline);
 });
 
 // --- Pipeline management ---
@@ -130,6 +144,41 @@ function renderPipeline() {
   });
 }
 
+// --- Pipeline save/load ---
+function exportPipeline() {
+  const blob = new Blob([JSON.stringify(commands, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "pipeline.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importPipeline(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (!Array.isArray(imported)) throw new Error("Must be a JSON array");
+      for (const cmd of imported) {
+        if (!cmd.type || !COMMAND_DEFS[cmd.type]) {
+          throw new Error(`Unknown command type: ${cmd.type}`);
+        }
+      }
+      commands = imported;
+      renderPipeline();
+      setStatus("Pipeline imported", "success");
+    } catch (err) {
+      setStatus("Import failed: " + err.message, "error");
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+}
+
 // --- Scraper execution ---
 async function runScraper() {
   const urlText = document.getElementById("url-input").value.trim();
@@ -186,12 +235,21 @@ function renderResults(results) {
   container.innerHTML = "";
   document.getElementById("results").classList.remove("hidden");
 
+  const hasExtracted = results.some((r) => r.extracted && r.extracted.length > 0);
+  const csvBtn = document.getElementById("download-csv-btn");
+  csvBtn.style.display = hasExtracted ? "" : "none";
+
   results.forEach((r, i) => {
     const card = document.createElement("div");
     card.className = "result-card";
 
     const header = document.createElement("div");
     header.className = "result-card-header";
+
+    const chevron = document.createElement("span");
+    chevron.className = "result-chevron";
+    chevron.textContent = "\u25B6";
+    header.appendChild(chevron);
 
     const urlSpan = document.createElement("span");
     urlSpan.className = "result-url";
@@ -206,7 +264,8 @@ function renderResults(results) {
       const copyBtn = document.createElement("button");
       copyBtn.className = "secondary-btn";
       copyBtn.textContent = "Copy";
-      copyBtn.addEventListener("click", () => {
+      copyBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
         navigator.clipboard.writeText(r.html).then(() => {
           copyBtn.textContent = "Copied!";
           setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
@@ -217,39 +276,72 @@ function renderResults(results) {
       const dlBtn = document.createElement("button");
       dlBtn.className = "secondary-btn";
       dlBtn.textContent = "Download";
-      dlBtn.addEventListener("click", () => downloadSingle(r.url, r.html, i));
+      dlBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        downloadSingle(r.url, r.html, i);
+      });
       actions.appendChild(dlBtn);
 
       const toggleBtn = document.createElement("button");
       toggleBtn.className = "secondary-btn";
       toggleBtn.textContent = "Show HTML";
+      toggleBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const pre = card.querySelector(".html-output");
+        const isHidden = pre.classList.contains("hidden");
+        pre.classList.toggle("hidden");
+        toggleBtn.textContent = isHidden ? "Hide HTML" : "Show HTML";
+      });
       actions.appendChild(toggleBtn);
     }
 
     header.appendChild(actions);
+
+    const body = document.createElement("div");
+    body.className = "result-card-body";
+
+    header.addEventListener("click", () => {
+      const collapsed = body.classList.toggle("collapsed");
+      chevron.textContent = collapsed ? "\u25B6" : "\u25BC";
+    });
+
     card.appendChild(header);
 
     if (r.error) {
       const errDiv = document.createElement("div");
       errDiv.className = "result-error";
       errDiv.textContent = r.error;
-      card.appendChild(errDiv);
+      body.appendChild(errDiv);
+    }
+
+    if (r.extracted && r.extracted.length > 0) {
+      const extDiv = document.createElement("div");
+      extDiv.className = "result-extracted";
+      r.extracted.forEach((ext) => {
+        const section = document.createElement("div");
+        section.className = "extracted-section";
+        const title = document.createElement("div");
+        title.className = "extracted-title";
+        title.textContent = `${ext.selector} (${ext.attr}) — ${ext.values.length} items`;
+        section.appendChild(title);
+
+        const list = document.createElement("pre");
+        list.className = "extracted-values";
+        list.textContent = ext.values.map((v, j) => `[${j}] ${v}`).join("\n");
+        section.appendChild(list);
+        extDiv.appendChild(section);
+      });
+      body.appendChild(extDiv);
     }
 
     if (r.html) {
       const pre = document.createElement("pre");
       pre.className = "html-output hidden";
       pre.textContent = r.html;
-      card.appendChild(pre);
-
-      const toggleBtn = actions.querySelector(".secondary-btn:last-child");
-      toggleBtn.addEventListener("click", () => {
-        const isHidden = pre.classList.contains("hidden");
-        pre.classList.toggle("hidden");
-        toggleBtn.textContent = isHidden ? "Hide HTML" : "Show HTML";
-      });
+      body.appendChild(pre);
     }
 
+    card.appendChild(body);
     container.appendChild(card);
   });
 }
@@ -285,10 +377,37 @@ async function downloadZip() {
     body: JSON.stringify({ results: okResults }),
   });
 
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    setStatus("ZIP download failed: " + (err.error || res.statusText), "error");
+    return;
+  }
+
   const blob = await res.blob();
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = "scraped.zip";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+async function downloadCsv() {
+  const res = await fetch("/download-csv", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ results: lastResults }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    setStatus("CSV download failed: " + (err.error || res.statusText), "error");
+    return;
+  }
+
+  const blob = await res.blob();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "extracted.csv";
   a.click();
   URL.revokeObjectURL(a.href);
 }

@@ -31,8 +31,11 @@
           <button data-cmd="scroll" title="Scroll to bottom">
             <span class="cmd-icon">&#8595;</span> Scroll
           </button>
-          <button data-cmd="click" title="Click element by text">
+          <button data-cmd="click" title="Click element by text or selector">
             <span class="cmd-icon">&#9758;</span> Click
+          </button>
+          <button data-cmd="extract" title="Extract data with CSS selector">
+            <span class="cmd-icon">&#9632;</span> Extract
           </button>
           <button data-cmd="wait_selector" title="Wait for element">
             <span class="cmd-icon">&#9201;</span> Wait for Selector
@@ -40,6 +43,17 @@
           <button data-cmd="wait_timeout" title="Wait for duration">
             <span class="cmd-icon">&#9203;</span> Wait (ms)
           </button>
+        </div>
+
+        <h3 class="palette-sub">Pipeline</h3>
+        <div class="palette-buttons">
+          <button id="export-pipeline-btn" title="Save pipeline to file">
+            <span class="cmd-icon">&#8593;</span> Export
+          </button>
+          <button id="import-pipeline-btn" title="Load pipeline from file">
+            <span class="cmd-icon">&#8595;</span> Import
+          </button>
+          <input type="file" id="import-file-input" accept=".json" style="display:none">
         </div>
       </div>
 
@@ -60,6 +74,7 @@
       <div class="results-header">
         <h3>Results</h3>
         <div class="results-actions">
+          <button id="download-csv-btn" class="secondary-btn" style="display:none">Download CSV</button>
           <button id="download-zip-btn" class="secondary-btn">Download All (.zip)</button>
         </div>
       </div>

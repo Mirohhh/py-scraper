@@ -2,7 +2,7 @@ import re
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
 
 
-def execute_scrape(url: str, commands: list[dict]) -> str:
+def execute_scrape(url: str, commands: list[dict]) -> dict:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
@@ -14,15 +14,18 @@ def execute_scrape(url: str, commands: list[dict]) -> str:
             ),
         )
         page = context.new_page()
+        extracted = []
 
         try:
             page.goto(url, wait_until="domcontentloaded", timeout=30000)
             page.wait_for_timeout(1000)
 
             for cmd in commands:
-                _execute_command(page, cmd)
+                result = _execute_command(page, cmd)
+                if result is not None:
+                    extracted.append(result)
 
-            return page.content()
+            return {"html": page.content(), "extracted": extracted}
         finally:
             context.close()
             browser.close()
@@ -40,9 +43,19 @@ def _execute_command(page, cmd: dict):
             page.wait_for_timeout(delay)
 
     elif cmd_type == "click":
-        text = params.get("text", "")
+        selector = params.get("selector", "").strip()
+        text = params.get("text", "").strip()
         wait_after = int(params.get("wait_after_ms", 2000))
-        if text:
+
+        if selector:
+            try:
+                loc = page.locator(selector).first
+                loc.scroll_into_view_if_needed(timeout=5000)
+                loc.click(timeout=10000)
+                page.wait_for_timeout(wait_after)
+            except PlaywrightTimeout:
+                pass
+        elif text:
             locator = page.get_by_text(re.compile(re.escape(text), re.IGNORECASE)).first
             try:
                 locator.scroll_into_view_if_needed(timeout=5000)
@@ -59,6 +72,21 @@ def _execute_command(page, cmd: dict):
                 except PlaywrightTimeout:
                     pass
 
+    elif cmd_type == "extract":
+        selector = params.get("selector", "").strip()
+        attr = params.get("attr", "text").strip().lower()
+        if selector:
+            elements = page.query_selector_all(selector)
+            values = []
+            for el in elements:
+                if attr == "text":
+                    values.append(el.text_content() or "")
+                elif attr == "html":
+                    values.append(el.inner_html() or "")
+                else:
+                    values.append(el.get_attribute(attr) or "")
+            return {"selector": selector, "attr": attr, "values": values}
+
     elif cmd_type == "wait_selector":
         selector = params.get("selector", "")
         timeout = int(params.get("timeout", 10000))
@@ -71,3 +99,5 @@ def _execute_command(page, cmd: dict):
     elif cmd_type == "wait_timeout":
         ms = int(params.get("ms", 1000))
         page.wait_for_timeout(ms)
+
+    return None

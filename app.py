@@ -1,3 +1,4 @@
+import csv
 import io
 import re
 import zipfile
@@ -39,10 +40,17 @@ def scrape():
         if not url.startswith(("http://", "https://")):
             url = "https://" + url
         try:
-            html = execute_scrape(url, commands)
-            results.append({"url": url, "html": html, "error": None})
+            scraped = execute_scrape(url, commands)
+            results.append(
+                {
+                    "url": url,
+                    "html": scraped["html"],
+                    "extracted": scraped["extracted"],
+                    "error": None,
+                }
+            )
         except Exception as e:
-            results.append({"url": url, "html": None, "error": str(e)})
+            results.append({"url": url, "html": None, "extracted": [], "error": str(e)})
 
     return jsonify({"results": results})
 
@@ -70,6 +78,31 @@ def download_zip():
     )
 
 
+@app.route("/download-csv", methods=["POST"])
+def download_csv():
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Request body must be valid JSON"}), 400
+    results = data.get("results", [])
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["url", "selector", "index", "value"])
+
+    for r in results:
+        url = r.get("url", "")
+        for ext in r.get("extracted", []):
+            selector = ext.get("selector", "")
+            for j, val in enumerate(ext.get("values", [])):
+                writer.writerow([url, selector, j, val])
+
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=extracted.csv"},
+    )
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -93,17 +126,36 @@ COMMANDS = [
     },
     {
         "type": "click",
-        "description": "Click an element by its visible text",
+        "description": "Click an element by CSS selector or visible text",
         "params": {
+            "selector": {
+                "type": "string",
+                "description": "CSS selector (alternative to text)",
+            },
             "text": {
                 "type": "string",
-                "required": True,
-                "description": "Text content of the element to click",
+                "description": "Visible text of the element to click",
             },
             "wait_after_ms": {
                 "type": "int",
                 "default": 2000,
                 "description": "Wait after click in ms",
+            },
+        },
+    },
+    {
+        "type": "extract",
+        "description": "Extract data from elements matching a CSS selector",
+        "params": {
+            "selector": {
+                "type": "string",
+                "required": True,
+                "description": "CSS selector for elements to extract",
+            },
+            "attr": {
+                "type": "string",
+                "default": "text",
+                "description": "What to extract: 'text', 'html', or an attribute name like 'href'",
             },
         },
     },
@@ -153,7 +205,6 @@ def api_scrape():
     if data is None:
         return _api_error(400, "Request body must be valid JSON")
 
-    # Accept single "url" or multiple "urls"
     if "urls" in data:
         urls = data["urls"]
     elif "url" in data:
@@ -182,10 +233,12 @@ def api_scrape():
         if not url.startswith(("http://", "https://")):
             url = "https://" + url
         try:
-            html = execute_scrape(url, commands)
-            entry = {"url": url, "status": "ok", "html_length": len(html)}
+            scraped = execute_scrape(url, commands)
+            entry = {"url": url, "status": "ok", "html_length": len(scraped["html"])}
             if return_html:
-                entry["html"] = html
+                entry["html"] = scraped["html"]
+            if scraped["extracted"]:
+                entry["extracted"] = scraped["extracted"]
             results.append(entry)
         except Exception as e:
             results.append({"url": url, "status": "error", "error": str(e)})
@@ -226,9 +279,9 @@ def api_scrape_zip():
             if not url.startswith(("http://", "https://")):
                 url = "https://" + url
             try:
-                html = execute_scrape(url, commands)
+                scraped = execute_scrape(url, commands)
                 filename = _url_to_filename(url, i)
-                zf.writestr(filename, html)
+                zf.writestr(filename, scraped["html"])
             except Exception:
                 continue
 
