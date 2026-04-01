@@ -16,6 +16,7 @@ body {
 /* Top nav */
 .topnav {
   display: flex;
+  justify-content: center;
   gap: 0;
   background: #161b22;
   border-bottom: 1px solid #30363d;
@@ -23,7 +24,9 @@ body {
 }
 
 .topnav a {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   padding: 0.75rem 1rem;
   color: #8b949e;
   text-decoration: none;
@@ -40,6 +43,12 @@ body {
 .topnav a.active {
   color: #f0f6fc;
   border-bottom-color: #58a6ff;
+}
+
+.nav-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
 .container {
@@ -419,15 +428,6 @@ h3 {
   margin-left: auto;
 }
 
-.result-card-body {
-  overflow: hidden;
-  transition: max-height 0.2s ease;
-}
-
-.result-card-body.collapsed {
-  display: none;
-}
-
 .result-error {
   padding: 0.5rem 1rem 0.75rem;
   font-size: 0.82rem;
@@ -452,21 +452,72 @@ h3 {
   margin: 0;
 }
 
-.html-output.hidden {
-  display: none;
+/* Docs layout */
+.docs-layout {
+  display: flex;
+  max-width: 960px;
+  margin: 0 auto;
+  min-height: calc(100vh - 45px);
 }
 
-/* Docs page */
-.docs h2 {
-  font-size: 1.35rem;
+.docs-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 25vh;
+  height: 100vh;
+  padding: 1.5rem 0;
+}
+
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  color: #8b949e;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: color 0.15s, background 0.15s;
+}
+
+.sidebar-link:hover {
+  color: #c9d1d9;
+}
+
+.sidebar-link.active {
   color: #f0f6fc;
-  margin: 2.5rem 0 0.75rem;
-  padding-bottom: 0.4rem;
+  border-left: 2px solid #58a6ff;
+}
+
+.sidebar-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.docs-content {
+  flex: 1;
+  max-width: 700px;
+  padding: 2rem 2.5rem;
+}
+
+/* Docs content */
+.docs h1 {
+  font-size: 1.5rem;
+  color: #f0f6fc;
+  margin: 2rem 0 0.75rem;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid #30363d;
 }
 
-.docs h2:first-of-type {
-  margin-top: 1rem;
+.docs h1:first-of-type {
+  margin-top: 0;
 }
 
 .docs h3 {

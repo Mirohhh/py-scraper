@@ -248,7 +248,7 @@ function renderResults(results) {
 
     const chevron = document.createElement("span");
     chevron.className = "result-chevron";
-    chevron.textContent = "\u25B6";
+    chevron.textContent = "\u25BC";
     header.appendChild(chevron);
 
     const urlSpan = document.createElement("span");
@@ -281,28 +281,19 @@ function renderResults(results) {
         downloadSingle(r.url, r.html, i);
       });
       actions.appendChild(dlBtn);
-
-      const toggleBtn = document.createElement("button");
-      toggleBtn.className = "secondary-btn";
-      toggleBtn.textContent = "Show HTML";
-      toggleBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const pre = card.querySelector(".html-output");
-        const isHidden = pre.classList.contains("hidden");
-        pre.classList.toggle("hidden");
-        toggleBtn.textContent = isHidden ? "Hide HTML" : "Show HTML";
-      });
-      actions.appendChild(toggleBtn);
     }
 
     header.appendChild(actions);
 
     const body = document.createElement("div");
     body.className = "result-card-body";
+    body.style.display = i === 0 ? "block" : "none";
+    chevron.textContent = i === 0 ? "\u25BC" : "\u25B6";
 
     header.addEventListener("click", () => {
-      const collapsed = body.classList.toggle("collapsed");
-      chevron.textContent = collapsed ? "\u25B6" : "\u25BC";
+      const hidden = body.style.display === "none";
+      body.style.display = hidden ? "block" : "none";
+      chevron.textContent = hidden ? "\u25BC" : "\u25B6";
     });
 
     card.appendChild(header);
@@ -336,7 +327,7 @@ function renderResults(results) {
 
     if (r.html) {
       const pre = document.createElement("pre");
-      pre.className = "html-output hidden";
+      pre.className = "html-output";
       pre.textContent = r.html;
       body.appendChild(pre);
     }

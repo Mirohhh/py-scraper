@@ -1,12 +1,49 @@
 import csv
 import io
 import re
+import time
 import zipfile
+from functools import wraps
 from urllib.parse import urlparse
 from flask import Flask, render_template, request, jsonify, Response
 from scraper import execute_scrape
 
 app = Flask(__name__)
+
+# ---------------------------------------------------------------------------
+# Rate limiting (in-memory, per-IP, fixed window)
+# ---------------------------------------------------------------------------
+
+_rate_limit_store: dict[str, list[float]] = {}
+RATE_LIMIT_MAX = 30
+RATE_LIMIT_WINDOW = 60
+
+
+def _rate_limit():
+    ip = request.remote_addr or "unknown"
+    now = time.time()
+    window_start = now - RATE_LIMIT_WINDOW
+    timestamps = _rate_limit_store.get(ip, [])
+    timestamps = [t for t in timestamps if t > window_start]
+    if not timestamps:
+        _rate_limit_store.pop(ip, None)
+    if len(timestamps) >= RATE_LIMIT_MAX:
+        return jsonify({"error": "Rate limit exceeded. Try again later."}), 429
+    timestamps.append(now)
+    _rate_limit_store[ip] = timestamps
+    return None
+
+
+def api_rate_limit(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        limited = _rate_limit()
+        if limited:
+            return limited
+        return f(*args, **kwargs)
+
+    return wrapper
+
 
 # ---------------------------------------------------------------------------
 # Web UI routes
@@ -24,6 +61,7 @@ def docs():
 
 
 @app.route("/scrape", methods=["POST"])
+@api_rate_limit
 def scrape():
     data = request.get_json()
     urls = data.get("urls", [])
@@ -190,16 +228,19 @@ COMMANDS = [
 
 
 @app.route("/api/health", methods=["GET"])
+@api_rate_limit
 def api_health():
     return jsonify({"status": "ok"})
 
 
 @app.route("/api/commands", methods=["GET"])
+@api_rate_limit
 def api_commands():
     return jsonify({"commands": COMMANDS})
 
 
 @app.route("/api/scrape", methods=["POST"])
+@api_rate_limit
 def api_scrape():
     data = request.get_json(silent=True)
     if data is None:
@@ -225,13 +266,30 @@ def api_scrape():
 
     return_html = data.get("html", True)
 
-    results = []
+    try:
+        page = max(1, int(data.get("page", 1)))
+        per_page = max(1, min(100, int(data.get("per_page", 10))))
+    except (ValueError, TypeError):
+        return _api_error(400, "'page' and 'per_page' must be integers")
+
+    valid_urls = []
     for raw_url in urls:
         if not isinstance(raw_url, str) or not raw_url.strip():
             continue
         url = raw_url.strip()
         if not url.startswith(("http://", "https://")):
             url = "https://" + url
+        valid_urls.append(url)
+
+    total = len(valid_urls)
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    start = (page - 1) * per_page
+    end = start + per_page
+    page_urls = valid_urls[start:end]
+
+    results = []
+    for url in page_urls:
         try:
             scraped = execute_scrape(url, commands)
             entry = {"url": url, "status": "ok", "html_length": len(scraped["html"])}
@@ -243,10 +301,21 @@ def api_scrape():
         except Exception as e:
             results.append({"url": url, "status": "error", "error": str(e)})
 
-    return jsonify({"results": results})
+    return jsonify(
+        {
+            "results": results,
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total": total,
+                "total_pages": total_pages,
+            },
+        }
+    )
 
 
 @app.route("/api/scrape/zip", methods=["POST"])
+@api_rate_limit
 def api_scrape_zip():
     data = request.get_json(silent=True)
     if data is None:

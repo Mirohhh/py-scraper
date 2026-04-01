@@ -8,108 +8,140 @@
 </head>
 <body>
   <nav class="topnav">
-    <a href="/">Scraper</a>
-    <a href="/docs" class="active">Docs</a>
+    <a href="/">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Scraper
+    </a>
+    <a href="/docs" class="active">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      Docs
+    </a>
   </nav>
 
-  <div class="container docs">
+  <div class="docs-layout">
+    <aside class="docs-sidebar">
+      <div class="sidebar-section">
+        <a href="#ui" class="sidebar-link active">
+          <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Web UI
+        </a>
+        <a href="#commands" class="sidebar-link">
+          <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          Commands
+        </a>
+        <a href="#api" class="sidebar-link">
+          <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          API
+        </a>
+      </div>
+    </aside>
 
-    <h1>Documentation</h1>
+    <main class="docs-content">
 
-    <!-- ============================================================ -->
-    <h2 id="ui">Web UI</h2>
-    <!-- ============================================================ -->
+      <!-- ============================================================ -->
+      <h1 id="ui">Web UI Guide</h1>
+      <!-- ============================================================ -->
 
-    <h3>Step 1 — Enter URLs</h3>
-    <p>In the <strong>Target URLs</strong> textarea, enter one URL per line. The scraper will visit each URL in order.</p>
-    <pre class="code-block">https://inside.fifa.com/fifa-world-ranking/men
+      <h3>Step 1 — Enter URLs</h3>
+      <p>In the <strong>Target URLs</strong> textarea, enter one URL per line. The scraper will visit each URL in order.</p>
+      <pre class="code-block">https://inside.fifa.com/fifa-world-ranking/men
 https://example.com
 https://news.ycombinator.com</pre>
 
-    <h3>Step 2 — Build a Command Pipeline</h3>
-    <p>Click buttons in the <strong>Commands</strong> panel to add them to your pipeline. Each command appears as a block with editable parameters. Drag blocks to reorder them.</p>
-    <p>The scraper executes commands top-to-bottom on every URL.</p>
+      <h3>Step 2 — Build a Command Pipeline</h3>
+      <p>Click buttons in the <strong>Commands</strong> panel to add them to your pipeline. Each command appears as a block with editable parameters. Drag blocks to reorder them.</p>
+      <p>The scraper executes commands top-to-bottom on every URL.</p>
 
-    <h3>Step 3 — Run</h3>
-    <p>Click <strong>Run Scraper</strong>. The status bar shows progress. When finished, results appear below — one card per URL.</p>
+      <h3>Step 3 — Run</h3>
+      <p>Click <strong>Run Scraper</strong>. The status bar shows progress. When finished, results appear below — one card per URL. Click a result card header to expand or collapse it.</p>
 
-    <h3>Step 4 — Export</h3>
-    <ul>
-      <li>Click <strong>Copy</strong> on a result card to copy its HTML to clipboard.</li>
-      <li>Click <strong>Download</strong> to save a single <code>.html</code> file.</li>
-      <li>Click <strong>Download All (.zip)</strong> in the header to get every result as a zip archive.</li>
-    </ul>
+      <h3>Step 4 — Export</h3>
+      <ul>
+        <li>Click <strong>Copy</strong> on a result card to copy its HTML to clipboard.</li>
+        <li>Click <strong>Download</strong> to save a single <code>.html</code> file.</li>
+        <li>Click <strong>Download All (.zip)</strong> to get every result as a zip archive.</li>
+        <li>Click <strong>Download CSV</strong> to export extracted data.</li>
+      </ul>
 
-    <!-- ============================================================ -->
-    <h2 id="commands">Commands Reference</h2>
-    <!-- ============================================================ -->
-
-    <h3 id="cmd-scroll">Scroll</h3>
-    <p>Scrolls to the bottom of the page. Useful for pages that load content lazily (infinite scroll).</p>
-    <table class="docs-table">
-      <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
-      <tbody>
-        <tr><td><code>times</code></td><td>int</td><td>1</td><td>How many times to scroll down</td></tr>
-        <tr><td><code>delay_ms</code></td><td>int</td><td>1500</td><td>Wait between scrolls (ms). Lower = faster</td></tr>
-      </tbody>
-    </table>
-    <p class="docs-example"><strong>Example:</strong> Scroll 5 times with 500ms delay to load a long feed.</p>
-
-    <h3 id="cmd-click">Click</h3>
-    <p>Clicks the first element whose visible text matches. Case-insensitive. Scrolls the element into view first.</p>
-    <table class="docs-table">
-      <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
-      <tbody>
-        <tr><td><code>text</code></td><td>string</td><td>—</td><td>Visible text of the button/link (partial match OK)</td></tr>
-        <tr><td><code>wait_after_ms</code></td><td>int</td><td>2000</td><td>Wait after clicking (ms) for content to load</td></tr>
-      </tbody>
-    </table>
-    <p class="docs-example"><strong>Example:</strong> Text = <code>Show full rankings</code> clicks the FIFA rankings expand button.</p>
-
-    <h3 id="cmd-wait-selector">Wait for Selector</h3>
-    <p>Pauses until a CSS selector becomes visible on the page. Useful after a click that loads new content.</p>
-    <table class="docs-table">
-      <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
-      <tbody>
-        <tr><td><code>selector</code></td><td>string</td><td>—</td><td>CSS selector (e.g. <code>.results</code>, <code>#modal</code>)</td></tr>
-        <tr><td><code>timeout</code></td><td>int</td><td>10000</td><td>Max wait time (ms)</td></tr>
-      </tbody>
-    </table>
-    <p class="docs-example"><strong>Example:</strong> Selector = <code>.ranking-table tbody tr</code> waits for table rows to appear.</p>
-
-    <h3 id="cmd-wait">Wait (ms)</h3>
-    <p>Pauses for a fixed duration. Use as a last resort when other wait strategies don't work.</p>
-    <table class="docs-table">
-      <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
-      <tbody>
-        <tr><td><code>ms</code></td><td>int</td><td>—</td><td>Duration in milliseconds</td></tr>
-      </tbody>
-    </table>
-    <p class="docs-example"><strong>Example:</strong> <code>3000</code> waits 3 seconds.</p>
-
-    <!-- ============================================================ -->
-    <h2 id="pipeline-example">Pipeline Example</h2>
-    <!-- ============================================================ -->
-
-    <p>Scrape the full FIFA rankings by clicking "Show full rankings" and waiting for the table to load:</p>
-    <pre class="code-block">1. Click       → text: "Show full rankings"
+      <h3>Pipeline Example</h3>
+      <p>Scrape the full FIFA rankings by clicking "Show full rankings" and waiting for the table to load:</p>
+      <pre class="code-block">1. Click       → text: "Show full rankings"
 2. Wait (ms)   → 3000
 3. Scroll      → times: 1</pre>
 
-    <!-- ============================================================ -->
-    <h2 id="api">API</h2>
-    <!-- ============================================================ -->
+      <!-- ============================================================ -->
+      <h1 id="commands">Commands Reference</h1>
+      <!-- ============================================================ -->
 
-    <p>All API endpoints accept and return JSON.</p>
+      <h3>Scroll</h3>
+      <p>Scrolls to the bottom of the page. Useful for pages that load content lazily (infinite scroll).</p>
+      <table class="docs-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>times</code></td><td>int</td><td>1</td><td>How many times to scroll down</td></tr>
+          <tr><td><code>delay_ms</code></td><td>int</td><td>1500</td><td>Wait between scrolls (ms). Lower = faster</td></tr>
+        </tbody>
+      </table>
+      <p class="docs-example"><strong>Example:</strong> Scroll 5 times with 500ms delay to load a long feed.</p>
 
-    <h3 id="api-health">Health Check</h3>
-    <pre class="code-block">GET /api/health
+      <h3>Click</h3>
+      <p>Clicks an element by CSS selector or by visible text. Case-insensitive when matching by text. Scrolls the element into view first.</p>
+      <table class="docs-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>selector</code></td><td>string</td><td>—</td><td>CSS selector (alternative to text)</td></tr>
+          <tr><td><code>text</code></td><td>string</td><td>—</td><td>Visible text of the button/link (partial match OK)</td></tr>
+          <tr><td><code>wait_after_ms</code></td><td>int</td><td>2000</td><td>Wait after clicking (ms) for content to load</td></tr>
+        </tbody>
+      </table>
+      <p class="docs-example"><strong>Example:</strong> Text = <code>Show full rankings</code> clicks the FIFA rankings expand button.</p>
+
+      <h3>Extract</h3>
+      <p>Extracts data from elements matching a CSS selector. Returns values in the response under <code>extracted</code>.</p>
+      <table class="docs-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>selector</code></td><td>string</td><td>required</td><td>CSS selector for elements to extract</td></tr>
+          <tr><td><code>attr</code></td><td>string</td><td>text</td><td>What to extract: <code>text</code>, <code>html</code>, or an attribute name like <code>href</code></td></tr>
+        </tbody>
+      </table>
+      <p class="docs-example"><strong>Example:</strong> Selector = <code>.ranking-table td.name</code>, attr = <code>text</code> extracts team names.</p>
+
+      <h3>Wait for Selector</h3>
+      <p>Pauses until a CSS selector becomes visible on the page. Useful after a click that loads new content.</p>
+      <table class="docs-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>selector</code></td><td>string</td><td>required</td><td>CSS selector (e.g. <code>.results</code>, <code>#modal</code>)</td></tr>
+          <tr><td><code>timeout</code></td><td>int</td><td>10000</td><td>Max wait time (ms)</td></tr>
+        </tbody>
+      </table>
+      <p class="docs-example"><strong>Example:</strong> Selector = <code>.ranking-table tbody tr</code> waits for table rows to appear.</p>
+
+      <h3>Wait (ms)</h3>
+      <p>Pauses for a fixed duration. Use as a last resort when other wait strategies don't work.</p>
+      <table class="docs-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>ms</code></td><td>int</td><td>required</td><td>Duration in milliseconds</td></tr>
+        </tbody>
+      </table>
+      <p class="docs-example"><strong>Example:</strong> <code>3000</code> waits 3 seconds.</p>
+
+      <!-- ============================================================ -->
+      <h1 id="api">API Reference</h1>
+      <!-- ============================================================ -->
+
+      <p>All API endpoints accept and return JSON. Rate limited to <strong>30 requests per minute</strong> per IP.</p>
+
+      <h3>Health Check</h3>
+      <pre class="code-block">GET /api/health
 
 Response 200:
 { "status": "ok" }</pre>
 
-    <h3 id="api-commands">List Commands</h3>
-    <pre class="code-block">GET /api/commands
+      <h3>List Commands</h3>
+      <pre class="code-block">GET /api/commands
 
 Response 200:
 {
@@ -126,8 +158,8 @@ Response 200:
   ]
 }</pre>
 
-    <h3 id="api-scrape">Scrape</h3>
-    <pre class="code-block">POST /api/scrape
+      <h3>Scrape</h3>
+      <pre class="code-block">POST /api/scrape
 Content-Type: application/json
 
 {
@@ -138,19 +170,21 @@ Content-Type: application/json
   ],
   "html": true
 }</pre>
-    <p><strong>Fields:</strong></p>
-    <table class="docs-table">
-      <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
-      <tbody>
-        <tr><td><code>url</code></td><td>string</td><td>one of url/urls</td><td>Single URL to scrape</td></tr>
-        <tr><td><code>urls</code></td><td>string[]</td><td>one of url/urls</td><td>Multiple URLs to scrape</td></tr>
-        <tr><td><code>commands</code></td><td>object[]</td><td>no</td><td>Command pipeline (see <a href="#commands">Commands</a>)</td></tr>
-        <tr><td><code>html</code></td><td>bool</td><td>no</td><td>Include HTML in response (default true)</td></tr>
-      </tbody>
-    </table>
+      <p><strong>Fields:</strong></p>
+      <table class="docs-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>url</code></td><td>string</td><td>one of url/urls</td><td>Single URL to scrape</td></tr>
+          <tr><td><code>urls</code></td><td>string[]</td><td>one of url/urls</td><td>Multiple URLs to scrape</td></tr>
+          <tr><td><code>commands</code></td><td>object[]</td><td>no</td><td>Command pipeline (see <a href="#commands">Commands</a>)</td></tr>
+          <tr><td><code>html</code></td><td>bool</td><td>no</td><td>Include HTML in response (default true)</td></tr>
+          <tr><td><code>page</code></td><td>int</td><td>no</td><td>Page number (default 1)</td></tr>
+          <tr><td><code>per_page</code></td><td>int</td><td>no</td><td>URLs per page, max 100 (default 10)</td></tr>
+        </tbody>
+      </table>
 
-    <p><strong>Response:</strong></p>
-    <pre class="code-block">{
+      <p><strong>Response:</strong></p>
+      <pre class="code-block">{
   "results": [
     {
       "url": "https://example.com",
@@ -158,21 +192,27 @@ Content-Type: application/json
       "html_length": 528,
       "html": "&lt;!DOCTYPE html&gt;..."
     }
-  ]
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 10,
+    "total": 1,
+    "total_pages": 1
+  }
 }</pre>
 
-    <p><strong>Multi-URL example:</strong></p>
-    <pre class="code-block">POST /api/scrape
+      <p><strong>Multi-URL example:</strong></p>
+      <pre class="code-block">POST /api/scrape
 {
   "urls": ["https://example.com", "https://example.org"],
   "commands": [{ "type": "scroll", "params": { "times": 2 } }],
   "html": false
 }</pre>
-    <p>Set <code>html</code> to <code>false</code> when you only need lengths or success/failure status.</p>
+      <p>Set <code>html</code> to <code>false</code> when you only need lengths or success/failure status.</p>
 
-    <h3 id="api-zip">Scrape to ZIP</h3>
-    <p>Same input as <code>/api/scrape</code>, but returns a <code>.zip</code> file with one HTML file per URL.</p>
-    <pre class="code-block">POST /api/scrape/zip
+      <h3>Scrape to ZIP</h3>
+      <p>Same input as <code>/api/scrape</code>, but returns a <code>.zip</code> file with one HTML file per URL.</p>
+      <pre class="code-block">POST /api/scrape/zip
 Content-Type: application/json
 
 {
@@ -183,25 +223,38 @@ Response 200:
 Content-Type: application/zip
 Content-Disposition: attachment; filename=scraped.zip</pre>
 
-    <h3 id="api-errors">Error Handling</h3>
-    <p>Validation errors return <code>400</code>:</p>
-    <pre class="code-block">POST /api/scrape { "url": "...", "commands": [{"type": "bad"}] }
+      <h3>Error Handling</h3>
+      <p>Validation errors return <code>400</code>:</p>
+      <pre class="code-block">POST /api/scrape { "url": "...", "commands": [{"type": "bad"}] }
 
 Response 400:
 { "error": "commands[0].type 'bad' is invalid. Must be one of: click, scroll, wait_selector, wait_timeout" }</pre>
-    <p>Scrape failures (DNS, timeout, etc.) are per-URL — other URLs still succeed:</p>
-    <pre class="code-block">{
+      <p>Scrape failures (DNS, timeout, etc.) are per-URL — other URLs still succeed:</p>
+      <pre class="code-block">{
   "results": [
     { "url": "https://example.com", "status": "ok", "html_length": 528 },
     { "url": "https://bad.invalid", "status": "error", "error": "net::ERR_NAME_NOT_RESOLVED" }
-  ]
+  ],
+  "pagination": { "page": 1, "per_page": 10, "total": 2, "total_pages": 1 }
 }</pre>
+      <p>Rate limit exceeded returns <code>429</code>:</p>
+      <pre class="code-block">Response 429:
+{ "error": "Rate limit exceeded. Try again later." }</pre>
 
-    <h3 id="api-curl">cURL Examples</h3>
-    <pre class="code-block"># Single URL
+      <h3>cURL Examples</h3>
+      <pre class="code-block"># Single URL
 curl -X POST http://localhost:5000/api/scrape \
   -H "Content-Type: application/json" \
   -d '{"url": "https://example.com"}'
+
+# Multiple URLs with pagination (page 2, 5 per page)
+curl -X POST http://localhost:5000/api/scrape \
+  -H "Content-Type: application/json" \
+  -d '{
+    "urls": ["https://a.com", "https://b.com", "https://c.com", "https://d.com", "https://e.com", "https://f.com"],
+    "page": 2,
+    "per_page": 5
+  }'
 
 # Multiple URLs with commands
 curl -X POST http://localhost:5000/api/scrape \
@@ -217,6 +270,23 @@ curl -X POST http://localhost:5000/api/scrape/zip \
   -d '{"urls": ["https://example.com"]}' \
   -o scraped.zip</pre>
 
+    </main>
   </div>
+
+  <script>
+    document.querySelectorAll('.sidebar-link').forEach(link => {
+      link.addEventListener('click', () => {
+        document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      });
+    });
+    if (window.location.hash) {
+      const active = document.querySelector('.sidebar-link[href="' + window.location.hash + '"]');
+      if (active) {
+        document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+        active.classList.add('active');
+      }
+    }
+  </script>
 </body>
 </html>
