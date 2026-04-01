@@ -7,17 +7,21 @@
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+  <nav class="topnav">
+    <a href="/" class="active">Scraper</a>
+    <a href="/docs">Docs</a>
+  </nav>
   <div class="container">
     <h1>Web Scraper</h1>
 
     <div class="url-section">
-      <label for="url-input">Target URL</label>
-      <input
-        type="text"
+      <label for="url-input">Target URLs <span class="label-hint">(one per line)</span></label>
+      <textarea
         id="url-input"
-        placeholder="https://example.com"
+        rows="4"
+        placeholder="https://example.com&#10;https://inside.fifa.com/fifa-world-ranking/men&#10;https://another-site.com"
         spellcheck="false"
-      >
+      ></textarea>
     </div>
 
     <div class="builder">
@@ -54,13 +58,12 @@
 
     <div id="results" class="results hidden">
       <div class="results-header">
-        <h3>HTML Output</h3>
+        <h3>Results</h3>
         <div class="results-actions">
-          <button id="copy-btn" class="secondary-btn">Copy</button>
-          <button id="download-btn" class="secondary-btn">Download .html</button>
+          <button id="download-zip-btn" class="secondary-btn">Download All (.zip)</button>
         </div>
       </div>
-      <pre id="html-output" class="html-output"></pre>
+      <div id="results-list" class="results-list"></div>
     </div>
   </div>
 

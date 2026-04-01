@@ -1,72 +1,31 @@
 import re
-import atexit
-import logging
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
-
-log = logging.getLogger(__name__)
-
-_playwright = None
-_browser = None
-
-
-def _get_browser():
-    global _playwright, _browser
-
-    if _browser is not None:
-        try:
-            # Health check: list contexts to verify connection is alive
-            _browser.contexts
-            return _browser
-        except Exception:
-            log.warning("Browser connection lost, relaunching...")
-            _dispose_browser()
-
-    _playwright = sync_playwright().start()
-    _browser = _playwright.chromium.launch(headless=True)
-    return _browser
-
-
-def _dispose_browser():
-    global _playwright, _browser
-    try:
-        if _browser:
-            _browser.close()
-    except Exception:
-        pass
-    try:
-        if _playwright:
-            _playwright.stop()
-    except Exception:
-        pass
-    _browser = None
-    _playwright = None
-
-
-atexit.register(_dispose_browser)
 
 
 def execute_scrape(url: str, commands: list[dict]) -> str:
-    browser = _get_browser()
-    context = browser.new_context(
-        viewport={"width": 1280, "height": 900},
-        user_agent=(
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/120.0.0.0 Safari/537.36"
-        ),
-    )
-    page = context.new_page()
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(
+            viewport={"width": 1280, "height": 900},
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+        )
+        page = context.new_page()
 
-    try:
-        page.goto(url, wait_until="domcontentloaded", timeout=30000)
-        page.wait_for_timeout(1000)
+        try:
+            page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            page.wait_for_timeout(1000)
 
-        for cmd in commands:
-            _execute_command(page, cmd)
+            for cmd in commands:
+                _execute_command(page, cmd)
 
-        return page.content()
-    finally:
-        context.close()
+            return page.content()
+        finally:
+            context.close()
+            browser.close()
 
 
 def _execute_command(page, cmd: dict):

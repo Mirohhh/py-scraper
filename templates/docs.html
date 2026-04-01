@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Docs — Web Scraper</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <nav class="topnav">
+    <a href="/">Scraper</a>
+    <a href="/docs" class="active">Docs</a>
+  </nav>
+
+  <div class="container docs">
+
+    <h1>Documentation</h1>
+
+    <!-- ============================================================ -->
+    <h2 id="ui">Web UI</h2>
+    <!-- ============================================================ -->
+
+    <h3>Step 1 — Enter URLs</h3>
+    <p>In the <strong>Target URLs</strong> textarea, enter one URL per line. The scraper will visit each URL in order.</p>
+    <pre class="code-block">https://inside.fifa.com/fifa-world-ranking/men
+https://example.com
+https://news.ycombinator.com</pre>
+
+    <h3>Step 2 — Build a Command Pipeline</h3>
+    <p>Click buttons in the <strong>Commands</strong> panel to add them to your pipeline. Each command appears as a block with editable parameters. Drag blocks to reorder them.</p>
+    <p>The scraper executes commands top-to-bottom on every URL.</p>
+
+    <h3>Step 3 — Run</h3>
+    <p>Click <strong>Run Scraper</strong>. The status bar shows progress. When finished, results appear below — one card per URL.</p>
+
+    <h3>Step 4 — Export</h3>
+    <ul>
+      <li>Click <strong>Copy</strong> on a result card to copy its HTML to clipboard.</li>
+      <li>Click <strong>Download</strong> to save a single <code>.html</code> file.</li>
+      <li>Click <strong>Download All (.zip)</strong> in the header to get every result as a zip archive.</li>
+    </ul>
+
+    <!-- ============================================================ -->
+    <h2 id="commands">Commands Reference</h2>
+    <!-- ============================================================ -->
+
+    <h3 id="cmd-scroll">Scroll</h3>
+    <p>Scrolls to the bottom of the page. Useful for pages that load content lazily (infinite scroll).</p>
+    <table class="docs-table">
+      <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>times</code></td><td>int</td><td>1</td><td>How many times to scroll down</td></tr>
+        <tr><td><code>delay_ms</code></td><td>int</td><td>1500</td><td>Wait between scrolls (ms). Lower = faster</td></tr>
+      </tbody>
+    </table>
+    <p class="docs-example"><strong>Example:</strong> Scroll 5 times with 500ms delay to load a long feed.</p>
+
+    <h3 id="cmd-click">Click</h3>
+    <p>Clicks the first element whose visible text matches. Case-insensitive. Scrolls the element into view first.</p>
+    <table class="docs-table">
+      <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>text</code></td><td>string</td><td>—</td><td>Visible text of the button/link (partial match OK)</td></tr>
+        <tr><td><code>wait_after_ms</code></td><td>int</td><td>2000</td><td>Wait after clicking (ms) for content to load</td></tr>
+      </tbody>
+    </table>
+    <p class="docs-example"><strong>Example:</strong> Text = <code>Show full rankings</code> clicks the FIFA rankings expand button.</p>
+
+    <h3 id="cmd-wait-selector">Wait for Selector</h3>
+    <p>Pauses until a CSS selector becomes visible on the page. Useful after a click that loads new content.</p>
+    <table class="docs-table">
+      <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>selector</code></td><td>string</td><td>—</td><td>CSS selector (e.g. <code>.results</code>, <code>#modal</code>)</td></tr>
+        <tr><td><code>timeout</code></td><td>int</td><td>10000</td><td>Max wait time (ms)</td></tr>
+      </tbody>
+    </table>
+    <p class="docs-example"><strong>Example:</strong> Selector = <code>.ranking-table tbody tr</code> waits for table rows to appear.</p>
+
+    <h3 id="cmd-wait">Wait (ms)</h3>
+    <p>Pauses for a fixed duration. Use as a last resort when other wait strategies don't work.</p>
+    <table class="docs-table">
+      <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>ms</code></td><td>int</td><td>—</td><td>Duration in milliseconds</td></tr>
+      </tbody>
+    </table>
+    <p class="docs-example"><strong>Example:</strong> <code>3000</code> waits 3 seconds.</p>
+
+    <!-- ============================================================ -->
+    <h2 id="pipeline-example">Pipeline Example</h2>
+    <!-- ============================================================ -->
+
+    <p>Scrape the full FIFA rankings by clicking "Show full rankings" and waiting for the table to load:</p>
+    <pre class="code-block">1. Click       → text: "Show full rankings"
+2. Wait (ms)   → 3000
+3. Scroll      → times: 1</pre>
+
+    <!-- ============================================================ -->
+    <h2 id="api">API</h2>
+    <!-- ============================================================ -->
+
+    <p>All API endpoints accept and return JSON.</p>
+
+    <h3 id="api-health">Health Check</h3>
+    <pre class="code-block">GET /api/health
+
+Response 200:
+{ "status": "ok" }</pre>
+
+    <h3 id="api-commands">List Commands</h3>
+    <pre class="code-block">GET /api/commands
+
+Response 200:
+{
+  "commands": [
+    {
+      "type": "scroll",
+      "description": "Scroll to the bottom of the page",
+      "params": {
+        "times":  { "type": "int", "default": 1 },
+        "delay_ms": { "type": "int", "default": 1500 }
+      }
+    },
+    ...
+  ]
+}</pre>
+
+    <h3 id="api-scrape">Scrape</h3>
+    <pre class="code-block">POST /api/scrape
+Content-Type: application/json
+
+{
+  "url": "https://example.com",
+  "commands": [
+    { "type": "click", "params": { "text": "Show more" } },
+    { "type": "scroll", "params": { "times": 3 } }
+  ],
+  "html": true
+}</pre>
+    <p><strong>Fields:</strong></p>
+    <table class="docs-table">
+      <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>url</code></td><td>string</td><td>one of url/urls</td><td>Single URL to scrape</td></tr>
+        <tr><td><code>urls</code></td><td>string[]</td><td>one of url/urls</td><td>Multiple URLs to scrape</td></tr>
+        <tr><td><code>commands</code></td><td>object[]</td><td>no</td><td>Command pipeline (see <a href="#commands">Commands</a>)</td></tr>
+        <tr><td><code>html</code></td><td>bool</td><td>no</td><td>Include HTML in response (default true)</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Response:</strong></p>
+    <pre class="code-block">{
+  "results": [
+    {
+      "url": "https://example.com",
+      "status": "ok",
+      "html_length": 528,
+      "html": "&lt;!DOCTYPE html&gt;..."
+    }
+  ]
+}</pre>
+
+    <p><strong>Multi-URL example:</strong></p>
+    <pre class="code-block">POST /api/scrape
+{
+  "urls": ["https://example.com", "https://example.org"],
+  "commands": [{ "type": "scroll", "params": { "times": 2 } }],
+  "html": false
+}</pre>
+    <p>Set <code>html</code> to <code>false</code> when you only need lengths or success/failure status.</p>
+
+    <h3 id="api-zip">Scrape to ZIP</h3>
+    <p>Same input as <code>/api/scrape</code>, but returns a <code>.zip</code> file with one HTML file per URL.</p>
+    <pre class="code-block">POST /api/scrape/zip
+Content-Type: application/json
+
+{
+  "urls": ["https://example.com", "https://example.org"]
+}
+
+Response 200:
+Content-Type: application/zip
+Content-Disposition: attachment; filename=scraped.zip</pre>
+
+    <h3 id="api-errors">Error Handling</h3>
+    <p>Validation errors return <code>400</code>:</p>
+    <pre class="code-block">POST /api/scrape { "url": "...", "commands": [{"type": "bad"}] }
+
+Response 400:
+{ "error": "commands[0].type 'bad' is invalid. Must be one of: click, scroll, wait_selector, wait_timeout" }</pre>
+    <p>Scrape failures (DNS, timeout, etc.) are per-URL — other URLs still succeed:</p>
+    <pre class="code-block">{
+  "results": [
+    { "url": "https://example.com", "status": "ok", "html_length": 528 },
+    { "url": "https://bad.invalid", "status": "error", "error": "net::ERR_NAME_NOT_RESOLVED" }
+  ]
+}</pre>
+
+    <h3 id="api-curl">cURL Examples</h3>
+    <pre class="code-block"># Single URL
+curl -X POST http://localhost:5000/api/scrape \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com"}'
+
+# Multiple URLs with commands
+curl -X POST http://localhost:5000/api/scrape \
+  -H "Content-Type: application/json" \
+  -d '{
+    "urls": ["https://example.com", "https://example.org"],
+    "commands": [{"type": "scroll", "params": {"times": 2}}]
+  }'
+
+# Download as zip
+curl -X POST http://localhost:5000/api/scrape/zip \
+  -H "Content-Type: application/json" \
+  -d '{"urls": ["https://example.com"]}' \
+  -o scraped.zip</pre>
+
+  </div>
+</body>
+</html>

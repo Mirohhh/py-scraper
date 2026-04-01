@@ -13,6 +13,35 @@ body {
   min-height: 100vh;
 }
 
+/* Top nav */
+.topnav {
+  display: flex;
+  gap: 0;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  padding: 0 1.5rem;
+}
+
+.topnav a {
+  display: block;
+  padding: 0.75rem 1rem;
+  color: #8b949e;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.topnav a:hover {
+  color: #c9d1d9;
+}
+
+.topnav a.active {
+  color: #f0f6fc;
+  border-bottom-color: #58a6ff;
+}
+
 .container {
   max-width: 960px;
   margin: 0 auto;
@@ -48,6 +77,12 @@ h3 {
   letter-spacing: 0.08em;
 }
 
+.label-hint {
+  text-transform: none;
+  letter-spacing: normal;
+  color: #484f58;
+}
+
 #url-input {
   width: 100%;
   padding: 0.65rem 0.85rem;
@@ -59,6 +94,8 @@ h3 {
   font-family: "SF Mono", "Fira Code", monospace;
   outline: none;
   transition: border-color 0.15s;
+  resize: vertical;
+  line-height: 1.5;
 }
 
 #url-input:focus {
@@ -307,6 +344,11 @@ h3 {
   gap: 0.5rem;
 }
 
+.results-list {
+  display: flex;
+  flex-direction: column;
+}
+
 .secondary-btn {
   padding: 0.4rem 0.85rem;
   background: #21262d;
@@ -323,6 +365,51 @@ h3 {
   background: #30363d;
 }
 
+/* Result card */
+.result-card {
+  border-bottom: 1px solid #30363d;
+}
+
+.result-card:last-child {
+  border-bottom: none;
+}
+
+.result-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  gap: 0.75rem;
+}
+
+.result-url {
+  font-size: 0.85rem;
+  font-family: "SF Mono", "Fira Code", monospace;
+  color: #58a6ff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.result-card-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.result-error {
+  padding: 0.5rem 1rem 0.75rem;
+  font-size: 0.82rem;
+  color: #f85149;
+  font-family: "SF Mono", "Fira Code", monospace;
+}
+
+.result-card .html-output {
+  border-top: 1px solid #30363d;
+}
+
 .html-output {
   padding: 1rem;
   max-height: 500px;
@@ -334,4 +421,112 @@ h3 {
   word-break: break-all;
   background: #0d1117;
   margin: 0;
+}
+
+.html-output.hidden {
+  display: none;
+}
+
+/* Docs page */
+.docs h2 {
+  font-size: 1.35rem;
+  color: #f0f6fc;
+  margin: 2.5rem 0 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #30363d;
+}
+
+.docs h2:first-of-type {
+  margin-top: 1rem;
+}
+
+.docs h3 {
+  font-size: 1rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: #f0f6fc;
+  margin: 1.75rem 0 0.5rem;
+}
+
+.docs p {
+  font-size: 0.92rem;
+  line-height: 1.65;
+  margin-bottom: 0.75rem;
+  color: #c9d1d9;
+}
+
+.docs ul {
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.docs li {
+  font-size: 0.92rem;
+  line-height: 1.65;
+  margin-bottom: 0.35rem;
+  color: #c9d1d9;
+}
+
+.docs code {
+  background: #161b22;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: #e3b341;
+}
+
+.docs a {
+  color: #58a6ff;
+  text-decoration: none;
+}
+
+.docs a:hover {
+  text-decoration: underline;
+}
+
+.code-block {
+  display: block;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #c9d1d9;
+  white-space: pre;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.docs-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  font-size: 0.88rem;
+}
+
+.docs-table th,
+.docs-table td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #30363d;
+}
+
+.docs-table th {
+  background: #161b22;
+  color: #8b949e;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.docs-table td {
+  background: #0d1117;
+}
+
+.docs-example {
+  font-size: 0.88rem;
+  color: #8b949e;
+  margin-bottom: 1.5rem;
 }

@@ -28,6 +28,7 @@ const COMMAND_DEFS = {
 
 let commands = [];
 let dragIndex = null;
+let lastResults = [];
 
 // --- Init ---
 document.addEventListener("DOMContentLoaded", () => {
@@ -35,8 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.addEventListener("click", () => addCommand(btn.dataset.cmd));
   });
   document.getElementById("run-btn").addEventListener("click", runScraper);
-  document.getElementById("copy-btn").addEventListener("click", copyHtml);
-  document.getElementById("download-btn").addEventListener("click", downloadHtml);
+  document.getElementById("download-zip-btn").addEventListener("click", downloadZip);
 });
 
 // --- Pipeline management ---
@@ -66,14 +66,12 @@ function renderPipeline() {
     block.draggable = true;
     block.dataset.index = i;
 
-    // Drag handle
     const drag = document.createElement("span");
     drag.className = "cmd-drag";
     drag.textContent = "\u2630";
     drag.addEventListener("mousedown", () => { dragIndex = i; });
     block.appendChild(drag);
 
-    // Drag events
     block.addEventListener("dragstart", (e) => {
       dragIndex = i;
       block.classList.add("dragging");
@@ -102,13 +100,11 @@ function renderPipeline() {
       }
     });
 
-    // Label
     const label = document.createElement("span");
     label.className = "cmd-label";
     label.textContent = def.label;
     block.appendChild(label);
 
-    // Params
     const paramsDiv = document.createElement("div");
     paramsDiv.className = "cmd-params";
     def.fields.forEach((field) => {
@@ -123,7 +119,6 @@ function renderPipeline() {
     });
     block.appendChild(paramsDiv);
 
-    // Remove button
     const remove = document.createElement("button");
     remove.className = "cmd-remove";
     remove.innerHTML = "&times;";
@@ -137,17 +132,15 @@ function renderPipeline() {
 
 // --- Scraper execution ---
 async function runScraper() {
-  const urlInput = document.getElementById("url-input");
-  const url = urlInput.value.trim();
-  const status = document.getElementById("status");
+  const urlText = document.getElementById("url-input").value.trim();
+  const urls = urlText.split("\n").map((u) => u.trim()).filter(Boolean);
   const runBtn = document.getElementById("run-btn");
 
-  if (!url) {
-    setStatus("Enter a URL first", "error");
+  if (urls.length === 0) {
+    setStatus("Enter at least one URL", "error");
     return;
   }
 
-  // Build command list with cleaned params
   const cleanedCommands = commands.map((cmd) => {
     const params = {};
     for (const [k, v] of Object.entries(cmd.params)) {
@@ -157,13 +150,13 @@ async function runScraper() {
   });
 
   runBtn.disabled = true;
-  setStatus("Scraping...", "loading");
+  setStatus(`Scraping ${urls.length} URL${urls.length > 1 ? "s" : ""}...`, "loading");
 
   try {
     const res = await fetch("/scrape", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url, commands: cleanedCommands }),
+      body: JSON.stringify({ urls, commands: cleanedCommands }),
     });
 
     const data = await res.json();
@@ -173,14 +166,92 @@ async function runScraper() {
       return;
     }
 
-    document.getElementById("html-output").textContent = data.html;
-    document.getElementById("results").classList.remove("hidden");
-    setStatus("Done!", "success");
+    lastResults = data.results;
+    renderResults(data.results);
+
+    const ok = data.results.filter((r) => !r.error).length;
+    const fail = data.results.filter((r) => r.error).length;
+    let msg = `${ok} succeeded`;
+    if (fail > 0) msg += `, ${fail} failed`;
+    setStatus(msg, fail > 0 ? "error" : "success");
   } catch (err) {
     setStatus("Network error: " + err.message, "error");
   } finally {
     runBtn.disabled = false;
   }
+}
+
+function renderResults(results) {
+  const container = document.getElementById("results-list");
+  container.innerHTML = "";
+  document.getElementById("results").classList.remove("hidden");
+
+  results.forEach((r, i) => {
+    const card = document.createElement("div");
+    card.className = "result-card";
+
+    const header = document.createElement("div");
+    header.className = "result-card-header";
+
+    const urlSpan = document.createElement("span");
+    urlSpan.className = "result-url";
+    urlSpan.textContent = r.url;
+    urlSpan.title = r.url;
+    header.appendChild(urlSpan);
+
+    const actions = document.createElement("div");
+    actions.className = "result-card-actions";
+
+    if (r.html) {
+      const copyBtn = document.createElement("button");
+      copyBtn.className = "secondary-btn";
+      copyBtn.textContent = "Copy";
+      copyBtn.addEventListener("click", () => {
+        navigator.clipboard.writeText(r.html).then(() => {
+          copyBtn.textContent = "Copied!";
+          setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
+        });
+      });
+      actions.appendChild(copyBtn);
+
+      const dlBtn = document.createElement("button");
+      dlBtn.className = "secondary-btn";
+      dlBtn.textContent = "Download";
+      dlBtn.addEventListener("click", () => downloadSingle(r.url, r.html, i));
+      actions.appendChild(dlBtn);
+
+      const toggleBtn = document.createElement("button");
+      toggleBtn.className = "secondary-btn";
+      toggleBtn.textContent = "Show HTML";
+      actions.appendChild(toggleBtn);
+    }
+
+    header.appendChild(actions);
+    card.appendChild(header);
+
+    if (r.error) {
+      const errDiv = document.createElement("div");
+      errDiv.className = "result-error";
+      errDiv.textContent = r.error;
+      card.appendChild(errDiv);
+    }
+
+    if (r.html) {
+      const pre = document.createElement("pre");
+      pre.className = "html-output hidden";
+      pre.textContent = r.html;
+      card.appendChild(pre);
+
+      const toggleBtn = actions.querySelector(".secondary-btn:last-child");
+      toggleBtn.addEventListener("click", () => {
+        const isHidden = pre.classList.contains("hidden");
+        pre.classList.toggle("hidden");
+        toggleBtn.textContent = isHidden ? "Hide HTML" : "Show HTML";
+      });
+    }
+
+    container.appendChild(card);
+  });
 }
 
 function setStatus(msg, type) {
@@ -189,22 +260,35 @@ function setStatus(msg, type) {
   status.className = "status " + (type || "");
 }
 
-// --- Copy & download ---
-function copyHtml() {
-  const html = document.getElementById("html-output").textContent;
-  navigator.clipboard.writeText(html).then(() => {
-    const btn = document.getElementById("copy-btn");
-    btn.textContent = "Copied!";
-    setTimeout(() => { btn.textContent = "Copy"; }, 1500);
-  });
-}
+// --- Downloads ---
+function downloadSingle(url, html, index) {
+  const parsed = new URL(url);
+  let name = (parsed.host + parsed.pathname).replace(/\/$/, "");
+  name = name.replace(/[^\w\-.]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+  if (!name) name = "page_" + index;
 
-function downloadHtml() {
-  const html = document.getElementById("html-output").textContent;
   const blob = new Blob([html], { type: "text/html" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "scraped.html";
+  a.download = name + ".html";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+async function downloadZip() {
+  const okResults = lastResults.filter((r) => r.html);
+  if (okResults.length === 0) return;
+
+  const res = await fetch("/download-zip", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ results: okResults }),
+  });
+
+  const blob = await res.blob();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "scraped.zip";
   a.click();
   URL.revokeObjectURL(a.href);
 }
