@@ -1,118 +1,95 @@
 # py-scraper Documentation
 
-Welcome to the documentation index for the `py-scraper` app.
+This is the central docs index for the `py-scraper` repository.
 
-This project is a Python + Flask web scraper with a Scratch-style command builder UI. You can compose browser actions (`scroll`, `click`, `extract`, `wait`) and run them against one or many URLs using Playwright.
+Use this page as your entry point to:
+- understand the app quickly,
+- find detailed API/UI guides,
+- and navigate in-code documentation.
 
-## Documentation Map
+## Start here
 
-- **Main project overview**: `../README.md`
-- **Agent/project rules**: `../AGENTS.md`
-- **In-app docs page**: `/docs` route (`templates/docs.html`)
-- **Server/API implementation**: `../app.py`
-- **Scraping engine**: `../scraper.py`
-- **Frontend UI logic**: `../static/script.js`
-- **Frontend styles**: `../static/style.css`
+- **Project overview**: `../README.md`
+- **In-app documentation page**: `http://localhost:5000/docs` (source: `../templates/docs.html`)
+- **API guide**: `./API.md`
+- **UI guide**: `./UI.md`
+- **Repo engineering rules**: `../AGENTS.md`
 
-## Quick Start
+## Documentation map
 
-1. Install dependencies:
-   - `flask`
-   - `playwright`
-2. Install browser binary:
-   - `playwright install chromium`
-3. Run the app:
-   - `python app.py`
-4. Open:
-   - `http://localhost:5000`
+### Product + usage docs
 
-## App Usage
+1. `../README.md`  
+   High-level overview, setup, architecture notes, and quick API examples.
 
-### Web UI Flow
+2. `./UI.md`  
+   End-to-end web UI workflow:
+   - entering URLs
+   - building command pipelines
+   - export/import pipeline JSON
+   - troubleshooting common scraping issues
 
-1. Open `/`
-2. Enter one URL per line
-3. Build a command pipeline
-4. Run scraper
-5. Inspect results
-6. Export HTML/ZIP/CSV as needed
+3. `./API.md`  
+   Complete API reference:
+   - endpoint list and request/response shapes
+   - validation and error formats
+   - pagination behavior
+   - cURL examples for scrape and ZIP export
 
-### Supported Commands
+4. `../templates/docs.html`  
+   Built-in docs rendered at `/docs` for browser-based usage.
 
-- `scroll` — Scroll page bottom repeatedly (`times`, `delay_ms`)
-- `click` — Click by CSS selector or visible text (`selector`, `text`, `wait_after_ms`)
-- `extract` — Extract `text`, `html`, or attribute values (`selector`, `attr`)
-- `wait_selector` — Wait for selector to be visible (`selector`, `timeout`)
-- `wait_timeout` — Fixed sleep in milliseconds (`ms`)
+### In-code documentation
 
-## Architecture
+The codebase includes docstrings on core backend functions and route handlers.
 
-## High-Level Components
+- `../app.py`
+  - route-level docs for web and API endpoints
+  - helper docs for rate limiting, validation, scraping orchestration, and exports
+  - typed helper signatures for clearer maintenance
 
-- **`app.py`**
-  - Flask app setup
-  - Web UI routes (`/`, `/docs`, `/scrape`)
-  - Download routes (`/download-zip`, `/download-csv`)
-  - Public API routes (`/api/*`)
-  - Command metadata (`COMMANDS`)
-  - Request validation and rate limiting
-- **`scraper.py`**
-  - Playwright-driven execution
-  - Applies command pipeline to each URL
-  - Returns structured scrape result
-- **`templates/`**
-  - `index.html` for UI
-  - `docs.html` for built-in documentation
-- **`static/`**
-  - Vanilla JS interactions and API calls
-  - Dark-theme CSS styling
+- `../scraper.py`
+  - docs for `execute_scrape(...)` lifecycle and return shape
+  - docs for command execution behavior in `_execute_command(...)`
 
-## Execution Model
+## Recommended reading order
 
-- A **fresh browser** is launched per scrape execution to avoid threading issues.
-- Page load strategy uses `domcontentloaded` + short wait buffer.
-- Scrape returns a dict:
-  - `{"html": str, "extracted": list[dict]}`
+If you are new to the project:
 
-## API Summary
+1. `../README.md`
+2. `./UI.md`
+3. `./API.md`
+4. `../app.py`
+5. `../scraper.py`
 
-- `GET /api/health` — health check
-- `GET /api/commands` — command metadata
-- `POST /api/scrape` — JSON scrape response (+ pagination support)
-- `POST /api/scrape/zip` — ZIP of scraped HTML
+## Quick operational summary
 
-### Rate Limiting
+- Stack: Python 3.12+, Flask, Playwright (sync API), vanilla JS frontend.
+- No build step for frontend assets.
+- Scraping model:
+  - fresh browser per scrape execution
+  - `domcontentloaded` navigation + short wait buffer
+  - returns `{"html": str, "extracted": list[dict]}`
 
-- In-memory, per-IP fixed window
-- Default: `30` requests per minute
-- Applied to `/api/*` and UI scrape endpoint
+## When you add or change features
 
-## Data and Export Model
+Update docs in this order to keep everything aligned:
 
-- Each result is URL-scoped and can include:
-  - status
-  - html/html_length
-  - extracted values
-  - per-URL error
-- Export options:
-  - Single HTML
-  - Bulk ZIP
-  - CSV for extracted records
+1. Update command metadata in `../app.py` (`COMMANDS`) if command-related.
+2. Implement runtime behavior in `../scraper.py`.
+3. Update user-facing docs:
+   - `../templates/docs.html`
+   - `./UI.md` and/or `./API.md`
+   - `../README.md` for top-level changes
+4. Verify examples still match actual request/response behavior.
 
-## Development Notes
+## Notes on scope and reliability
 
-- Python 3.12+ conventions
-- Vanilla JS frontend (no build step)
-- No automated tests/linting configured yet in-repo
-- If you add tooling, align with conventions in `AGENTS.md`
-
-## Suggested Reading Order
-
-1. `../README.md` (product + API basics)
-2. `../app.py` (routes, validation, response shapes)
-3. `../scraper.py` (runtime command behavior)
-4. `templates/docs.html` (UI-facing docs content)
+- Rate limiting is in-memory (resets on restart).
+- Multi-URL scraping is concurrent but bounded.
+- Dynamic sites may require wait commands (`wait_selector` preferred over fixed waits).
+- Per-URL failures are isolated; one failed URL should not fail all results.
 
 ---
 
-If you’re extending the app, start by updating `COMMANDS` in `app.py`, then implement behavior in `scraper.py`, and finally document changes in both `templates/docs.html` and `../README.md`.
+If this index feels out of sync with behavior in code, treat `../app.py` and `../scraper.py` as the source of truth, then update this file and linked guides accordingly.

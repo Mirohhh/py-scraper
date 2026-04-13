@@ -1,214 +1,229 @@
 # py-scraper
 
-A Python web scraper with a Scratch-style visual command builder. Compose browser automation pipelines (scroll, click, extract, wait) and run them against one or more URLs. Playwright drives headless Chromium to execute the pipeline and return the fully rendered HTML.
+A Python web scraper with a Scratch-style visual command builder. You compose browser actions (`scroll`, `click`, `extract`, `wait`) and run them against one or many URLs. Playwright drives headless Chromium to execute the pipeline and return rendered HTML plus extracted values.
+
+---
+
+## What this project does
+
+- Build scraping workflows visually in the browser (no frontend build step, no JS framework)
+- Run the same command pipeline across multiple URLs
+- Export results as:
+  - single HTML files
+  - bulk ZIP archives
+  - CSV for extracted data
+- Access the same capabilities via a public JSON API
+
+---
 
 ## Features
 
-- **Visual pipeline builder** — drag-and-drop command blocks, no code required
-- **Multi-URL support** — scrape multiple pages in one run
-- **5 command types** — scroll, click (by selector or text), extract (text/html/attributes), wait for selector, wait for duration
-- **Data extraction** — pull structured data from pages using CSS selectors, export as CSV
-- **Export options** — single HTML download, bulk ZIP, CSV of extracted data
-- **Pipeline save/load** — export your command pipeline as JSON, import it later
-- **Public REST API** — programmatic access with rate limiting and pagination
-- **Collapsible results** — expandable result cards with HTML preview
+- **Scratch-style command builder UI**
+- **Multi-URL scraping** with concurrent execution
+- **5 built-in command types**
+  - `scroll`
+  - `click`
+  - `extract`
+  - `wait_selector`
+  - `wait_timeout`
+- **Data extraction** by CSS selector (`text`, `html`, or attribute values)
+- **Rate-limited API** (`30 req/min` per IP, in-memory)
+- **Pagination support** on `/api/scrape`
+- **Built-in docs page** at `/docs`
 
-## Quick Start
+---
+
+## Tech stack
+
+- **Python** 3.12+
+- **Flask** 3.x
+- **Playwright** 1.40+ (sync API)
+- **Vanilla JavaScript** + **Jinja2 templates**
+- No npm, no bundler, no build pipeline
+
+---
+
+## Quick start
+
+### 1) Clone and enter the repo
 
 ```bash
-# Clone and enter the project
 git clone <repo-url>
 cd py-scraper
+```
 
-# Install dependencies
+### 2) Install dependencies
+
+```bash
 pip install flask playwright
+```
 
-# Download Chromium binary
+### 3) Install Chromium for Playwright
+
+```bash
 playwright install chromium
+```
 
-# Run the server
+### 4) Run the app
+
+```bash
 python app.py
 ```
 
-Open [http://localhost:5000](http://localhost:5000) in your browser.
+Open:
 
-## Usage
+- `http://localhost:5000` (Web UI)
+- `http://localhost:5000/docs` (Built-in docs)
 
-### Web UI
+---
 
-1. Enter one or more URLs in the textarea (one per line)
-2. Click command buttons to build your pipeline (scroll, click, extract, etc.)
-3. Edit parameters directly in the pipeline blocks
-4. Drag blocks to reorder
+## Running with Flask CLI (optional)
+
+```bash
+flask --app app run --debug --port 5000
+```
+
+---
+
+## Web UI usage
+
+1. Enter one URL per line
+2. Add command blocks to the pipeline
+3. Configure command parameters
+4. Reorder via drag-and-drop
 5. Click **Run Scraper**
-6. The first result card is expanded, the rest are collapsed — click headers to toggle
-7. Use **Export** / **Import** to save and load pipelines as JSON files
+6. Review result cards (HTML + extracted data)
+7. Export as HTML / ZIP / CSV
 
-### Commands
+### Pipeline save/load
 
-| Command | Purpose | Key Parameters |
-|---------|---------|----------------|
-| **Scroll** | Scroll to page bottom N times | `times`, `delay_ms` |
-| **Click** | Click element by CSS selector or visible text | `selector`, `text`, `wait_after_ms` |
-| **Extract** | Extract data from matching elements | `selector`, `attr` (text/html/href) |
-| **Wait for Selector** | Wait until an element is visible | `selector`, `timeout` |
-| **Wait (ms)** | Fixed-duration sleep | `ms` |
+- **Export** saves pipeline JSON
+- **Import** restores pipeline JSON
 
-## API
+---
 
-All `/api/*` endpoints and the web UI `/scrape` endpoint are rate-limited to **30 requests per minute** per IP.
+## Command reference (quick)
 
-### Health Check
+| Command | Purpose | Key Params |
+|---|---|---|
+| `scroll` | Scroll page to bottom repeatedly | `times`, `delay_ms` |
+| `click` | Click by selector or visible text | `selector`, `text`, `wait_after_ms` |
+| `extract` | Extract values from matched elements | `selector`, `attr` |
+| `wait_selector` | Wait until selector is visible | `selector`, `timeout` |
+| `wait_timeout` | Sleep fixed duration | `ms` |
+
+---
+
+## API overview
+
+All `/api/*` endpoints are rate-limited to **30 req/min per IP**.
+
+### Endpoints
+
+- `GET /api/health` — health check
+- `GET /api/commands` — list command metadata
+- `POST /api/scrape` — scrape and return JSON results
+- `POST /api/scrape/zip` — scrape and return ZIP
+
+### Minimal examples
+
+Health check:
 
 ```bash
 curl http://localhost:5000/api/health
 ```
 
-```json
-{"status": "ok"}
-```
-
-### List Commands
-
-```bash
-curl http://localhost:5000/api/commands
-```
-
-Returns the full list of available command types with their parameters and defaults.
-
-### Scrape
+Single-URL scrape:
 
 ```bash
 curl -X POST http://localhost:5000/api/scrape \
   -H "Content-Type: application/json" \
-  -d '{
-    "url": "https://example.com",
-    "commands": [
-      {"type": "click", "params": {"text": "Show more"}},
-      {"type": "scroll", "params": {"times": 3}},
-      {"type": "extract", "params": {"selector": "h1", "attr": "text"}}
-    ]
-  }'
+  -d '{"url":"https://example.com"}'
 ```
 
-**Request fields:**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `url` | string | one of url/urls | Single URL to scrape |
-| `urls` | string[] | one of url/urls | Multiple URLs to scrape |
-| `commands` | object[] | no | Command pipeline |
-| `html` | bool | no | Include HTML in response (default `true`) |
-| `page` | int | no | Page number for pagination (default `1`) |
-| `per_page` | int | no | URLs per page, max 100 (default `10`) |
-
-**Response:**
-
-```json
-{
-  "results": [
-    {
-      "url": "https://example.com",
-      "status": "ok",
-      "html_length": 528,
-      "html": "<!DOCTYPE html>...",
-      "extracted": [
-        {"selector": "h1", "attr": "text", "values": ["Example Domain"]}
-      ]
-    }
-  ],
-  "pagination": {
-    "page": 1,
-    "per_page": 10,
-    "total": 1,
-    "total_pages": 1
-  }
-}
-```
-
-### Scrape to ZIP
-
-Same input as `/api/scrape`, returns a `.zip` file with one HTML file per URL.
+ZIP export:
 
 ```bash
 curl -X POST http://localhost:5000/api/scrape/zip \
   -H "Content-Type: application/json" \
-  -d '{"urls": ["https://example.com", "https://example.org"]}' \
+  -d '{"urls":["https://example.com","https://example.org"]}' \
   -o scraped.zip
 ```
 
-### Error Handling
+For full request/response details, see `docs/API.md`.
 
-- **400** — invalid input (missing URLs, bad command types, invalid pagination params)
-- **429** — rate limit exceeded
-- Per-URL scrape failures return `"status": "error"` in the results array, other URLs still succeed
+---
 
-```json
-{
-  "results": [
-    {"url": "https://example.com", "status": "ok", "html_length": 528},
-    {"url": "https://bad.invalid", "status": "error", "error": "net::ERR_NAME_NOT_RESOLVED"}
-  ],
-  "pagination": {"page": 1, "per_page": 10, "total": 2, "total_pages": 1}
-}
+## Project structure
+
+```text
+py-scraper/
+├── app.py                 # Flask app (UI routes, API routes, exports, rate limiting)
+├── scraper.py             # Playwright engine (execute_scrape)
+├── templates/
+│   ├── index.html         # Main UI
+│   └── docs.html          # Built-in docs page
+├── static/
+│   ├── script.js          # Frontend behavior
+│   └── style.css          # Styling
+├── docs/
+│   ├── README.md          # Docs index + architecture notes
+│   ├── UI.md              # UI workflow + command guide + troubleshooting
+│   └── API.md             # Detailed API reference
+├── AGENTS.md              # Repo-specific engineering guidance
+└── pyproject.toml         # Project metadata + dependencies
 ```
 
-## Project Structure
+---
 
-```
-app.py              Flask app: web UI routes, public API, download endpoints
-scraper.py          Playwright engine: execute_scrape(url, commands) -> {html, extracted}
-pyproject.toml      Project metadata and dependencies
-templates/
-  index.html        Web UI — pipeline builder, URL input, results display
-  docs.html         Built-in documentation page with sidebar navigation
-static/
-  script.js         Frontend logic — pipeline management, fetch calls, DOM rendering
-  style.css         Dark-themed styles — layout, cards, sidebar, syntax blocks
-```
+## Documentation map
 
-## Architecture
+- **Top-level overview:** `README.md` (this file)
+- **In-app documentation:** `/docs` (`templates/docs.html`)
+- **Docs index:** `docs/README.md`
+- **UI guide:** `docs/UI.md`
+- **API reference:** `docs/API.md`
+- **Maintenance/engineering rules:** `AGENTS.md`
 
-- **A fresh browser is launched per `execute_scrape` call** — no persistent singleton. This avoids Playwright thread-safety issues with Flask's threaded dev server.
-- **`domcontentloaded` + 1s buffer** — page load uses `wait_until="domcontentloaded"` instead of `networkidle`, because many sites keep WebSocket/analytics connections open that cause 15-second timeouts.
-- **`execute_scrape` returns a dict** — `{"html": str, "extracted": list[dict]}`, not a bare string.
-- **Rate limiting is in-memory** — uses a per-IP fixed-window counter (`_rate_limit_store` dict). Stale IPs are cleaned up lazily. This resets when the server restarts.
-- **No build step** — the frontend is vanilla JS with no bundler, framework, or npm dependencies.
+---
 
-## Development
+## Architecture notes
 
-```bash
-# Start the dev server with auto-reload
-python app.py
+- A **fresh browser** is launched per `execute_scrape` call (avoids cross-request Playwright issues).
+- Page navigation uses `wait_until="domcontentloaded"` plus a short buffer.
+- Scrape engine returns a dict:
+  - `{"html": str, "extracted": list[dict]}`
+- Multi-URL scraping is performed concurrently with a bounded thread pool.
+- Rate limiting is in-memory and resets on server restart.
 
-# Or use the Flask CLI
-flask --app app run --debug --port 5000
-```
+---
 
-The server runs on port 5000 in debug mode. Templates and static files are served directly by Flask.
+## Maintenance notes
 
-### Dependencies
+When extending the app:
 
-- Python 3.12+
-- Flask 3.0+
-- Playwright 1.40+ (with Chromium)
+1. Add or update command metadata in `COMMANDS` in `app.py`
+2. Implement command runtime behavior in `scraper.py`
+3. Update docs in:
+   - `templates/docs.html` (in-app docs)
+   - `docs/UI.md` and/or `docs/API.md`
+   - this `README.md` for top-level changes
+4. Keep input validation strict (`request.get_json(silent=True)` + `if data is None:` checks)
 
-```bash
-pip install flask playwright
-playwright install chromium
-```
+### Known operational caveats
 
-## Documentation
+- Some sites may block scraping or require additional waits/selectors.
+- Dynamic pages vary; prefer `wait_selector` over fixed sleeps where possible.
+- In-memory rate limiting is suitable for single-instance dev/small deployments.
 
-Additional docs are available in the `docs/` directory:
+---
 
-- `docs/README.md` — Documentation index and architecture overview
-- `docs/UI.md` — Web UI usage guide, command walkthroughs, and troubleshooting
-- `docs/API.md` — Detailed API reference with request/response examples
+## Development status
 
-You can also view the built-in docs page in the app at:
+There are currently no configured test/lint/type-check commands in this repo by default.  
+Suggested tooling conventions (when added) are documented in `AGENTS.md`.
 
-- `http://localhost:5000/docs`
+---
 
 ## License
 
