@@ -1,8 +1,28 @@
 import re
-from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+
+from playwright.sync_api import TimeoutError as PlaywrightTimeout
+from playwright.sync_api import sync_playwright
 
 
 def execute_scrape(url: str, commands: list[dict]) -> dict:
+    """Execute a scraping pipeline for a single URL using a fresh Playwright browser.
+
+    Args:
+        url: Target page URL.
+        commands: Ordered list of command objects. Each command should include a
+            `type` and optional `params` dict.
+
+    Returns:
+        A dict with:
+            - "html": Rendered page HTML after all commands are applied.
+            - "extracted": List of extraction result objects produced by `extract`
+              commands.
+
+    Notes:
+        - Uses `domcontentloaded` for initial navigation and then waits briefly to
+          allow additional dynamic rendering.
+        - Always closes page context and browser resources in `finally`.
+    """
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
@@ -32,6 +52,29 @@ def execute_scrape(url: str, commands: list[dict]) -> dict:
 
 
 def _execute_command(page, cmd: dict):
+    """Execute a single command against the current Playwright page.
+
+    Supported command types:
+        - scroll: Scroll to page bottom repeatedly.
+        - click: Click by CSS selector or visible text.
+        - extract: Collect text/html/attribute values from matching elements.
+        - wait_selector: Wait for a selector to become visible.
+        - wait_timeout: Sleep for a fixed duration (ms).
+
+    Args:
+        page: Playwright page instance.
+        cmd: Command object with `type` and optional `params`.
+
+    Returns:
+        For `extract`, returns a dict:
+            {"selector": str, "attr": str, "values": list[str]}
+        For all other commands, returns None.
+
+    Behavior:
+        - Timeout-related click/wait failures are swallowed to keep pipeline
+          execution resilient across varied pages.
+        - Unknown command types are ignored and return None.
+    """
     cmd_type = cmd.get("type", "")
     params = cmd.get("params", {})
 

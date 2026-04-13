@@ -198,6 +198,18 @@ pip install flask playwright
 playwright install chromium
 ```
 
+## Documentation
+
+Additional docs are available in the `docs/` directory:
+
+- `docs/README.md` — Documentation index and architecture overview
+- `docs/UI.md` — Web UI usage guide, command walkthroughs, and troubleshooting
+- `docs/API.md` — Detailed API reference with request/response examples
+
+You can also view the built-in docs page in the app at:
+
+- `http://localhost:5000/docs`
+
 ## License
 
 MIT

@@ -23,6 +23,12 @@ RATE_LIMIT_WINDOW = 60
 
 
 def _rate_limit():
+    """Apply a per-IP fixed-window rate limit for incoming requests.
+
+    Returns:
+        tuple[Response, int] | None: A Flask JSON error response with status 429
+        when the caller has exceeded the limit, otherwise None.
+    """
     ip = request.remote_addr or "unknown"
     now = time.time()
     window_start = now - RATE_LIMIT_WINDOW
@@ -38,6 +44,8 @@ def _rate_limit():
 
 
 def api_rate_limit(f):
+    """Decorator that enforces API rate limits before executing a route."""
+
     @wraps(f)
     def wrapper(*args, **kwargs):
         limited = _rate_limit()
@@ -55,17 +63,20 @@ def api_rate_limit(f):
 
 @app.route("/")
 def index():
+    """Render the main web UI."""
     return render_template("index.html")
 
 
 @app.route("/docs")
 def docs():
+    """Render the built-in documentation page."""
     return render_template("docs.html")
 
 
 @app.route("/scrape", methods=["POST"])
 @api_rate_limit
 def scrape():
+    """Handle web UI scrape requests and return per-URL HTML and extracted data."""
     data = request.get_json()
     urls = data.get("urls", [])
     commands = data.get("commands", [])
@@ -98,6 +109,7 @@ def scrape():
 
 @app.route("/download-zip", methods=["POST"])
 def download_zip():
+    """Create a ZIP archive containing scraped HTML from UI result payloads."""
     data = request.get_json(silent=True)
     if data is None:
         return jsonify({"error": "Request body must be valid JSON"}), 400
@@ -121,6 +133,7 @@ def download_zip():
 
 @app.route("/download-csv", methods=["POST"])
 def download_csv():
+    """Create a CSV export of extracted values from UI result payloads."""
     data = request.get_json(silent=True)
     if data is None:
         return jsonify({"error": "Request body must be valid JSON"}), 400
@@ -233,18 +246,21 @@ COMMANDS = [
 @app.route("/api/health", methods=["GET"])
 @api_rate_limit
 def api_health():
+    """Return service health status."""
     return jsonify({"status": "ok"})
 
 
 @app.route("/api/commands", methods=["GET"])
 @api_rate_limit
 def api_commands():
+    """Return supported command metadata for API and UI clients."""
     return jsonify({"commands": COMMANDS})
 
 
 @app.route("/api/scrape", methods=["POST"])
 @api_rate_limit
 def api_scrape():
+    """Scrape one or more URLs and return paginated JSON results."""
     data = request.get_json(silent=True)
     if data is None:
         return _api_error(400, "Request body must be valid JSON")
@@ -320,6 +336,7 @@ def api_scrape():
 @app.route("/api/scrape/zip", methods=["POST"])
 @api_rate_limit
 def api_scrape_zip():
+    """Scrape one or more URLs and return rendered pages as a ZIP download."""
     data = request.get_json(silent=True)
     if data is None:
         return _api_error(400, "Request body must be valid JSON")
@@ -371,10 +388,12 @@ def api_scrape_zip():
 
 
 def _api_error(status, message):
+    """Build a standardized JSON error response with the given HTTP status."""
     return jsonify({"error": message}), status
 
 
 def _scrape_one(url, commands, retries=2):
+    """Scrape a single URL with retry support and normalized result shape."""
     for attempt in range(retries + 1):
         try:
             scraped = execute_scrape(url, commands)
@@ -391,6 +410,7 @@ def _scrape_one(url, commands, retries=2):
 
 
 def _scrape_urls(urls, commands):
+    """Scrape multiple URLs concurrently while preserving input order."""
     if not urls:
         return []
     max_workers = min(3, len(urls))
@@ -411,6 +431,7 @@ def _scrape_urls(urls, commands):
 
 
 def _validate_commands(commands):
+    """Validate command payload structure and ensure command types are supported."""
     valid_types = {c["type"] for c in COMMANDS}
     for i, cmd in enumerate(commands):
         if not isinstance(cmd, dict):
@@ -422,6 +443,7 @@ def _validate_commands(commands):
 
 
 def _url_to_filename(url: str, index: int) -> str:
+    """Convert a URL into a safe, deterministic HTML filename for downloads."""
     parsed = urlparse(url)
     name = parsed.netloc + parsed.path.rstrip("/")
     name = re.sub(r"[^\w\-.]", "_", name)
