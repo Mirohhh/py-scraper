@@ -3,6 +3,7 @@ import io
 import re
 import time
 import zipfile
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import wraps
 from urllib.parse import urlparse
@@ -22,7 +23,7 @@ RATE_LIMIT_MAX = 30
 RATE_LIMIT_WINDOW = 60
 
 
-def _rate_limit():
+def _rate_limit() -> tuple[Response, int] | None:
     """Apply a per-IP fixed-window rate limit for incoming requests.
 
     Returns:
@@ -43,7 +44,7 @@ def _rate_limit():
     return None
 
 
-def api_rate_limit(f):
+def api_rate_limit(f: Callable):
     """Decorator that enforces API rate limits before executing a route."""
 
     @wraps(f)
@@ -387,12 +388,12 @@ def api_scrape_zip():
 # ---------------------------------------------------------------------------
 
 
-def _api_error(status, message):
+def _api_error(status: int, message: str) -> tuple[Response, int]:
     """Build a standardized JSON error response with the given HTTP status."""
     return jsonify({"error": message}), status
 
 
-def _scrape_one(url, commands, retries=2):
+def _scrape_one(url: str, commands: list[dict], retries: int = 2) -> dict:
     """Scrape a single URL with retry support and normalized result shape."""
     for attempt in range(retries + 1):
         try:
@@ -409,7 +410,7 @@ def _scrape_one(url, commands, retries=2):
     return {"html": None, "extracted": [], "error": "Unexpected failure"}
 
 
-def _scrape_urls(urls, commands):
+def _scrape_urls(urls: list[str], commands: list[dict]) -> list[dict]:
     """Scrape multiple URLs concurrently while preserving input order."""
     if not urls:
         return []
@@ -430,7 +431,7 @@ def _scrape_urls(urls, commands):
     return results
 
 
-def _validate_commands(commands):
+def _validate_commands(commands: list[dict]) -> str | None:
     """Validate command payload structure and ensure command types are supported."""
     valid_types = {c["type"] for c in COMMANDS}
     for i, cmd in enumerate(commands):
