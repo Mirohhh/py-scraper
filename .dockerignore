@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.git/
+.gitignore
+.env
+.env.*
+*.log
+*.sqlite3
+uv.lock

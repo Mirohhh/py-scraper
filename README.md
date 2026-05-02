@@ -85,6 +85,22 @@ flask --app app run --debug --port 5000
 
 ---
 
+### Build locally
+
+```bash
+docker build -t py-scraper .
+```
+
+### Run locally with Docker
+
+```bash
+docker run --rm -p 8080:8080 py-scraper
+```
+
+Open `http://localhost:8080`.
+
+---
+
 ## Web UI usage
 
 1. Enter one URL per line
